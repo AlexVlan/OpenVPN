@@ -56,11 +56,22 @@ else
         mkdir /etc/openvpn; mkdir /etc/openvpn/keys; chown -R openvpn:openvpn /etc/openvpn
         echo "создана новая дирктория openvpn"
 fi
+
 #Скачиваем easy-rsa
-wget -P /etc/openvpn https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.8/EasyRSA-3.0.8.tgz
-tar -xvzf /etc/openvpn/EasyRSA-3.0.8.tgz -C /etc/openvpn
+###wget -P /etc/openvpn https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.8/EasyRSA-3.0.8.tgz
+###tar -xvzf /etc/openvpn/EasyRSA-3.0.8.tgz -C /etc/openvpn
+###rm -rf /etc/openvpn/EasyRSA-3.0.8.tgz
+#Создадим файл vars, с настройками пользователя
+touch /etc/openvpn/EasyRSA-3.0.8/vars
+#Значения переменных для vars по дефолту
+ echo "Укажите основные настройки создания сертификатов"
+ echo "Все значения могут быть от балды, кроме срока действия сертификата"
+ echo "Укажите домен:(по умолчанию Horns ans hooves)"; read domain_name
+if [[ -z $domain_name ]]; then
+        domain_name="Horns_and_hooves"
+fi
+ echo "Страна:"
 
-rm -rf /etc/openvpn/EasyRSA-3.0.8.tgz
-
-exec bash
+ exec bash
+# domain_name="Horns_and_hooves"
 
