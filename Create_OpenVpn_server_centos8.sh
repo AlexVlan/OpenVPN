@@ -42,7 +42,7 @@ else
    esac
 fi
 echo 'Установим утилиты необходимые для дальнейшей работы'
-dnf install wget -y; dnf install unzip -y; dnf install zip -y
+dnf install wget -y; dnf install tar -y; dnf install zip -y
 #Для дальнейших действий авторизуемся под пользователем openvpn
 #su openvpn
 #Начинаем установку. Подключим репозиторий и скачаем сам дистрибутив
@@ -56,3 +56,11 @@ else
         mkdir /etc/openvpn; mkdir /etc/openvpn/keys; chown -R openvpn:openvpn /etc/openvpn
         echo "создана новая дирктория openvpn"
 fi
+#Скачиваем easy-rsa
+wget -P /etc/openvpn https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.8/EasyRSA-3.0.8.tgz
+tar -xvzf /etc/openvpn/EasyRSA-3.0.8.tgz -C /etc/openvpn
+
+rm -rf /etc/openvpn/EasyRSA-3.0.8.tgz
+
+exec bash
+
