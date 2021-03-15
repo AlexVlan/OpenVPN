@@ -122,9 +122,9 @@ cd /etc/openvpn/; /etc/openvpn/EasyRSA-3.0.8/easyrsa init-pki
 #Crl для информации об активных/отозванных сертификатов
 /etc/openvpn/EasyRSA-3.0.8/easyrsa gen-crl
 #Теперь копируем все что создали в папку keys
-cp /etc/openvpn/pki/ca.crt crl.pem dh.pem /etc/openvpn/keys/
+cp /etc/openvpn/pki/ca.crt /etc/openvpn/pki/crl.pem /etc/openvpn/pki/dh.pem /etc/openvpn/keys/
 cp /etc/openvpn/pki/issued/server_cert.crt /etc/openvpn/keys/
-cp /etc/openvpn/keys/private/server_cert.key /etc/openvpn/keys/
+cp /etc/openvpn/pki/private/server_cert.key /etc/openvpn/keys/
 
 #Получим данные для файла server.conf
 echo "Сейчас соберем информацию для файла конфигурации сервера."
@@ -134,15 +134,72 @@ if [[ $port_num =~ ^[0-9]+$ ]]; then #проверка на число
 else
    port_num=1194; echo "Номер порта установлен по умолчанию"
 echo "Протокол(по умолчанию udp)для установки tcp введите 1"; read protocol
+fi
 if [[ $protocol -eq 1 ]]; then
    protocol="tcp"
    echo "Выбран протокол tcp"
 else
    protocol="udp"
    echo "Выбран протокол udp"
+fi
 #Теперь создадим директорию для логов
 mkdir /var/log/openvpn
 touch /var/log/openvpn/{openvpn-status,openvpn}.log; chown -R openvpn:openvpn /var/log/openvpn
+#Включаем движение трафика
+echo net.ipv4.ip_forward=1 >>/etc/sysctl.conf
+sysctl -p /etc/sysctl.conf
+#Настроим selinux
+#dnf install whatprovides semanage -y
+dnf install policycoreutils-python-utils -y
+semanage port -a -t openvpn_port_t -p $protocol $port_num
+#iptables
+iptables -A INPUT -i eth0 -p $protocol --dport $port_num -j ACCEPT
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+#Создадим server.conf
+mkdir /etc/openvpn/server
+touch /etc/openvpn/server/server.conf
+chmod -R a+r /etc/openvpn
+cat <<EOF > /etc/openvpn/server/server.conf
+port $port_num
+proto $protocol
+dev tun
+ca /etc/openvpn/keys/ca.crt
+cert /etc/openvpn/keys/server_cert.crt
+key /etc/openvpn/keys/server_cert.key
+dh /etc/openvpn/keys/dh.pem
+crl-verify /etc/openvpn/keys/crl.pem
+topology subnet
+server 172.31.1.0 255.255.255.0
+route 172.31.1.0 255.255.255.0
+push "dhcp-option DNS 8.8.8.8"
+push "dhcp-option DNS 8.8.4.4"
+keepalive 10 120
+persist-key
+persist-tun
+status /var/log/openvpn/openvpn-status.log
+log-append /var/log/openvpn/openvpn.log
+verb 2
+mute 20
+daemon
+mode server
+user nobody
+group nobody
+EOF
+#Добавим сервер в автозагрузку и запустим
+#chown -R openvpn:openvpn /var/log/openvpn
+chmod -R a+rw /var/log/openvpn
+#sudo systemctl enable openvpn@server
+#sudo systemctl start openvpn@server
+#sudo systemctl status openvpn@server
+
+
+
+
+
+
+
+
+
 
  exec bash
 
