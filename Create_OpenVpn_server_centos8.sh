@@ -5,9 +5,8 @@ echo "Для начала создадим пользователя openvpn"
     #Создадим нового пользователя openvpn с правами администратора
     #Проверка на наличие пользователя в системе, для отсутствия ошибок при повторном запуске
 username=openvpn #переменная с именем пользователя
-#quantity_client  #колличество клиентов
-client_name=client
-answer=y
+client_name=client #имя клиента
+answer=y #ответ пользователя
 grep "^$username:" /etc/passwd >/dev/null
 if [[ $? -ne 0 ]]; then
     adduser openvpn; usermod -aG wheel openvpn; passwd openvpn
@@ -73,11 +72,11 @@ touch /etc/openvpn/EasyRSA-3.0.8/vars
 if [[ -z $country ]]; then
         country="RH"
 fi
- echo "Размер ключа(по умолчанию 4096):"; read key_size
+ echo "Размер ключа(по умолчанию 1024):"; read key_size
 if [[ $key_size =~ ^[0-9]+$ ]]; then #проверка на число
    echo "Установлен размер ключа:" $key_size
 else
-   key_size=4096; echo "Значение ключа установлено по умолчанию"
+   key_size=1024; echo "Значение ключа установлено по умолчанию"
 fi
 echo "Укажите область\край(по умолчанию Tegucigalpa"; read province
 if [[ -z $province ]]; then
@@ -187,12 +186,13 @@ mode server
 user nobody
 group nobody
 EOF
-Добавим сервер в автозагрузку и запустим
+echo "Добавим сервер в автозагрузку и запустим"
 #chown -R openvpn:openvpn /var/log/openvpn
 chmod -R a+rw /var/log/openvpn
 sudo systemctl enable openvpn-server@server
 sudo systemctl start openvpn-server@server
 sudo systemctl status openvpn-server@server
+##chmod -R a+r /etc/openvpn
 
 #Начнем создавать клиентов
 #Директория для готовых конфигов
@@ -212,30 +212,29 @@ route-method exe
 route-delay 2
 EOF
 #теперь функция создания клиентов
-
-
-#client_name #name
-#$quantity_client #count
 create_client () {
-      cd /etc/openvpn/EasyRSA-3.0.8/
-      ./easyrsa build-client-full "$client_name$quantity_client" nopass
-      
+      cd /etc/openvpn/
+      /etc/openvpn/EasyRSA-3.0.8/easyrsa build-client-full "$client_name$quantity_client" nopass
+      cp /home/openvpn/temp_conf_client.txt /home/openvpn/ready_conf/"$client_name$quantity_client"'.ovpn'
+{
+      echo "<ca>"; cat "/etc/openvpn/pki/ca.crt"; echo "</ca>"
+      echo "<cert>"; awk '/BEGIN/,/END/' "/etc/openvpn/pki/issued/$client_name$quantity_client.crt"; echo "</cert>"
+      echo "<key>"; cat "/etc/openvpn/pki/private/$client_name$quantity_client.key"; echo "</key>"
+      echo "<dh>"; cat "/etc/openvpn/pki/dh.pem"; echo "</dh>"
+} >> "/home/openvpn/ready_conf/"$client_name$quantity_client".ovpn"
 
-echo $quantity_client
-
-
-
-
-
-}
+} #Запускать функцию создания клиентов, по счетчику
 while [[ $quantity_client -ne 0 ]]; do
       create_client
       let "quantity_client=$quantity_client-1"
 done
-
-
-
- exec bash
+/etc/openvpn/EasyRSA-3.0.8/easyrsa gen-crl #генерируем crl для информации об активных сертификатах
+cp /etc/openvpn/pki/crl.pem /etc/openvpn/keys/ #Копируем в директорию с активными сертификатами
+sudo systemctl restart openvpn-server@server #перезапускаем сервер, для применения crl
+cd /home/openvpn/ready_conf/; ls -alh ./
+echo "сейчас вы в директории с готовыми файлами конфигураций, их уже можно использовать"
+echo "скрипт завершен успешно"
+exec bash
 
 
 
