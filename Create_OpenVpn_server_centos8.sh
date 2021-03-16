@@ -152,6 +152,8 @@ sysctl -p /etc/sysctl.conf
 #dnf install whatprovides semanage -y
 dnf install policycoreutils-python-utils -y
 semanage port -a -t openvpn_port_t -p $protocol $port_num
+/sbin/restorecon -v /var/log/openvpn/openvpn.log
+/sbin/restorecon -v /var/log/openvpn/openvpn-status.log
 #iptables
 iptables -A INPUT -i eth0 -p $protocol --dport $port_num -j ACCEPT
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
@@ -185,19 +187,51 @@ mode server
 user nobody
 group nobody
 EOF
-#Добавим сервер в автозагрузку и запустим
+Добавим сервер в автозагрузку и запустим
 #chown -R openvpn:openvpn /var/log/openvpn
 chmod -R a+rw /var/log/openvpn
-#sudo systemctl enable openvpn@server
-#sudo systemctl start openvpn@server
-#sudo systemctl status openvpn@server
+sudo systemctl enable openvpn-server@server
+sudo systemctl start openvpn-server@server
+sudo systemctl status openvpn-server@server
+
+#Начнем создавать клиентов
+#Директория для готовых конфигов
+mkdir /home/openvpn/ready_conf
+echo "IP к которому необходимо подключаться клиентам в формате 111.111.111.111"; read ip_adress
+#Создадим темповый файл конфигурации клиента
+touch /home/openvpn/temp_conf_client.txt
+cat <<EOF > /home/openvpn/temp_conf_client.txt
+client
+dev tun
+proto $protocol
+remote $ip_adress $port_num
+persist-key
+persist-tun
+verb 3
+route-method exe
+route-delay 2
+EOF
+#теперь функция создания клиентов
+
+
+#client_name #name
+#$quantity_client #count
+create_client () {
+      cd /etc/openvpn/EasyRSA-3.0.8/
+      ./easyrsa build-client-full "$client_name$quantity_client" nopass
+      
+
+echo $quantity_client
 
 
 
 
 
-
-
+}
+while [[ $quantity_client -ne 0 ]]; do
+      create_client
+      let "quantity_client=$quantity_client-1"
+done
 
 
 
