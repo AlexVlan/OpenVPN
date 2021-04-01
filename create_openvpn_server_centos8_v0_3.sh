@@ -146,9 +146,6 @@ dnf install setroubleshoot -y
 semanage port -a -t openvpn_port_t -p $protocol $port_num
 /sbin/restorecon -v /var/log/openvpn/openvpn.log
 /sbin/restorecon -v /var/log/openvpn/openvpn-status.log
-#      #настроим iptables
-#iptables -A INPUT -i eth0 -p $protocol --dport $port_num -j ACCEPT
-#iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
       #Настроим firewalld
 firewall-cmd --add-port="$port_num"/"$protocol"
 firewall-cmd --zone=trusted --add-source=172.31.1.0/24
@@ -157,20 +154,7 @@ firewall-cmd --permanent --zone=trusted --add-source=172.31.1.0/24
 firewall-cmd --direct --add-rule ipv4 nat POSTROUTING 0 -s 172.31.1.0/24 -j MASQUERADE
 firewall-cmd --permanent --direct --add-rule ipv4 nat POSTROUTING 0 -s 172.31.1.0/24 -j MASQUERADE
 systemctl restart firewalld
-
-
-###
-#yum install iptables-services -y
-#systemctl mask firewalld
-#systemctl enable iptables
-#systemctl stop firewalld
-#systemctl start iptables
-#iptables --flush
-#iptables -t nat -A POSTROUTING -s 172.31.1.0/24 -o eth0 -j MASQUERADE
-#iptables-save > /etc/sysconfig/iptables
-###
-
-      #Создадим server.conf
+     #Создадим server.conf
 mkdir /etc/openvpn/server
 touch /etc/openvpn/server/server.conf
 #chmod -R a+r /etc/openvpn
@@ -248,17 +232,4 @@ cd /home/openvpn/ready_conf/; ls -alh ./
 echo "сейчас вы в директории с готовыми файлами конфигураций, их уже можно использовать"
 echo "скрипт завершен успешно"
 exec bash
-
-
-
-
-
-
-
-
-
-
-
-
-
 
