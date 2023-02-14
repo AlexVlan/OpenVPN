@@ -4,5 +4,8 @@ The second script has the name ubuntu20+_openvpn-install.sh. This script I took 
 
 # INSTALL
 To install any scripts you need fork it, then do 
-<sudo chmod  +x ./create_openvpn_server_centos8_v0_3.sh > 
-and run it <sudo ./create_openvpn_server_centos8_v0_3.sh >
+```
+sudo chmod  +x ./create_openvpn_server_centos8_v0_3.sh >
+```
+and run it
+``` <sudo ./create_openvpn_server_centos8_v0_3.sh > ```
