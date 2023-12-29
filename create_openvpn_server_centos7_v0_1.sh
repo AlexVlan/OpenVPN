@@ -1,28 +1,28 @@
 #!/bin/bash
-echo "Этот скрипт создаст OpenVPN сервер с нуля, от вас потребуется указать количество клиентов и минимальные настройки"
-echo "К каждому пункту будет пояснение"
-echo "Для начала создадим пользователя openvpn"
-      #Создадим нового пользователя openvpn с правами администратора
-      #Проверка на наличие пользователя в системе, для отсутствия ошибок при повторном запуске
-username=openvpn #переменная с именем пользователя
-client_name=client #имя клиента
-answer=y #ответ пользователя
+echo "Цей скрипт створить OpenVPN сервер з нуля, від вас буде потрібно вказати кількість клієнтів і мінімальні налаштування"
+echo "До кожного пункту буде пояснення"
+echo "Для початку створимо користувача openvpn"
+      #Створимо нового користувача openvpn з правами адміністратора
+      #Перевірка на наявність користувача в системі, для відсутності помилок під час повторного запуску
+username=openvpn #змінна з ім'ям користувача
+client_name=client #імя кліента
+answer=y #відповідь користувача
 grep "^$username:" /etc/passwd >/dev/null
 if [[ $? -ne 0 ]]; then
    adduser openvpn; usermod -aG wheel openvpn; passwd openvpn
-   echo "Пользователь создан"
+   echo "Користувача створено"
 else
-   echo "Пользователь уже создан в системе"
+   echo "Цей користувач вже існує"
 fi
-      #Создание клиентов по умолчанию
-echo "Укажите количество клиентов по умолчанию. Потом можно добавить еще по необходимости"
+      #Створення користувача за замовчуванням
+echo "Вкажіть кількість клієнтів за замовчуванням. Потім можна додати ще за потреби"
 read quantity_client
-      #Проверка-значение число, иначе сначала
-if [[ $quantity_client =~ ^[0-9]+$ ]]; then   #количество клиентов
-   echo "Будут создано "$quantity_client" клиентских конфигураций с именами "$client_name"[X].ovpn"
+      #Перевірка значення-число, інакше заново
+if [[ $quantity_client =~ ^[0-9]+$ ]]; then   #кількість клієнтів
+   echo "Буде створено "$quantity_client" клієнтських конфігурацій з іменами "$client_name"[X].ovpn"
 else
-   echo "введённый символ не является числом, попробуйте снова"
-   echo "Попробовать снова? (y/n/e)"
+   echo "введений символ не є числом, спробуйте знову"
+   echo "Спробувати знову? (y/n/e)"
    read answer
    case $answer in
            "y")
@@ -40,57 +40,57 @@ else
               ;;
    esac
 fi
-echo 'Установим утилиты необходимые для дальнейшей работы'
+echo 'Встановимо залежності'
 yum install wget -y; yum install tar -y; yum install zip -y; yum install openssl
-      #Начинаем установку. Подключим репозиторий и скачаем сам дистрибутив
+      #Розпочинаємо встановлення. Підключимо репозиторій та встановимо саму програму
 yum install epel-release -y; sudo yum install openvpn -y
-      #Проверка наличия директории openvpn если есть то удаляем и создаем заново, иначе создаем
+      #Перевірка наявності директорії openvpn, якщо є, то видаляємо і створюємо заново, інакше створюємо
 if [[ -e /etc/openvpn ]]; then
    rm -rf /etc/openvpn
    mkdir /etc/openvpn; mkdir /etc/openvpn/keys; chown -R openvpn:openvpn /etc/openvpn
-   echo "Удалена старая директория openvpn, создана новая"
+   echo "Видалено стару директорію openvpn, створено нову"
 else
    mkdir /etc/openvpn; mkdir /etc/openvpn/keys; chown -R openvpn:openvpn /etc/openvpn
-   echo "создана новая дирктория openvpn"
+   echo "створено нову диркторію openvpn"
 fi
-      #Скачиваем easy-rsa
+      #Завантажуємо easy-rsa
 wget -P /etc/openvpn https://github.com/OpenVPN/easy-rsa/releases/download/v3.0.8/EasyRSA-3.0.8.tgz
 tar -xvzf /etc/openvpn/EasyRSA-3.0.8.tgz -C /etc/openvpn
 rm -rf /etc/openvpn/EasyRSA-3.0.8.tgz
-      #Создадим файл vars, с настройками пользователя
+      #Створимо файл vars, з налаштуваннями користувача
 touch /etc/openvpn/EasyRSA-3.0.8/vars
       #Значения переменных для vars
-echo "Укажите основные настройки создания сертификатов"
-echo "Для каждого пункта есть настройки по умолчанию, их можно оставить"
-echo "Страна(по умолчанию RH):"; read country
+echo "Вкажіть основні налаштування створення сертифікатів"
+echo "Для кожного пункту є налаштування за замовчуванням, їх можна залишити"
+echo "Країна(за замовчуванням RH):"; read country
 if [[ -z $country ]]; then
    country="RH"
 fi
-echo "Размер ключа(по умолчанию 2048):"; read key_size
+echo "Розмір ключа(за замовчуванням 2048):"; read key_size
 if [[ $key_size =~ ^[0-9]+$ ]]; then #проверка на число
-   echo "Установлен размер ключа:" $key_size
+   echo "Встановлено розмір ключа:" $key_size
 else
-   key_size=2048; echo "Значение ключа установлено по умолчанию"
+   key_size=2048; echo "Значення ключа встановлено за замовчуванням"
 fi
-echo "Укажите область\край(по умолчанию Tegucigalpa"; read province
+echo "Вкажіть область(за замовчуванням Tegucigalpa"; read province
 if [[ -z $province ]]; then
    province="Tegucigalpa"
 fi
-echo "Город(по умолчанию Tegucigalpa)"; read city
+echo "Місто(за замовчуванням Tegucigalpa)"; read city
 if [[ -z $city ]]; then
    city="Tegucigalpa"
 fi
-echo "email(по умолчанию temp@mass.hn)"; read mail
+echo "email(за замовчуванням temp@mass.hn)"; read mail
 if [[ -z $mail ]]; then
    mail="temp@mass.hn"
 fi
-echo "срок действия сертификата, дней(по умолчанию 3650/10 лет): "; read expire
+echo "Строк дії сертифіката, днів(за замовчуванням 3650/10 років): "; read expire
 if [[ $expire =~ ^[0-9]+$ ]]; then
-   echo "Срок действия сертификата" $expire "дней"
+   echo "Строк дії сертифіката" $expire "днів"
 else
    expire=3650
 fi
-      #Набиваем vars
+      #Налаштовуємо vars
 cat <<EOF > /etc/openvpn/EasyRSA-3.0.8/vars
 set_var EASYRSA_REQ_COUNTRY $country
 set_var EASYRSA_KEY_SIZE $key_size
@@ -103,9 +103,9 @@ set_var EASYRSA_REQ_CN changeme
 set_var EASYRSA_CERT_EXPIRE $expire
 set_var EASYRSA_DH_KEY_SIZE $key_size
 EOF
-      #Теперь инициализируем инфраструктуру публичных ключей
+      #Тепер ініціалізуємо інфраструктуру публічних ключів
 cd /etc/openvpn/; /etc/openvpn/EasyRSA-3.0.8/easyrsa init-pki
-      #Создаем свой ключ
+      #Створюємо свій ключ
 /etc/openvpn/EasyRSA-3.0.8/easyrsa build-ca nopass
       #Создаем сертификат сервера
 /etc/openvpn/EasyRSA-3.0.8/easyrsa build-server-full server_cert nopass
