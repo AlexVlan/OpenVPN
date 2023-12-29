@@ -41,9 +41,9 @@ else
    esac
 fi
 echo 'Установим утилиты необходимые для дальнейшей работы'
-dnf install wget -y; dnf install tar -y; dnf install zip -y
+yum install wget -y; yum install tar -y; yum install zip -y; yum install openssl
       #Начинаем установку. Подключим репозиторий и скачаем сам дистрибутив
-dnf install epel-release -y; sudo dnf install openvpn -y
+yum install epel-release -y; sudo yum install openvpn -y
       #Проверка наличия директории openvpn если есть то удаляем и создаем заново, иначе создаем
 if [[ -e /etc/openvpn ]]; then
    rm -rf /etc/openvpn
@@ -141,8 +141,8 @@ touch /var/log/openvpn/{openvpn-status,openvpn}.log; chown -R openvpn:openvpn /v
 echo net.ipv4.ip_forward=1 >>/etc/sysctl.conf
 sysctl -p /etc/sysctl.conf
       #Настроим selinux
-dnf install policycoreutils-python-utils -y
-dnf install setroubleshoot -y
+yum install policycoreutils-python-utils -y
+yum install setroubleshoot -y
 semanage port -a -t openvpn_port_t -p $protocol $port_num
 /sbin/restorecon -v /var/log/openvpn/openvpn.log
 /sbin/restorecon -v /var/log/openvpn/openvpn-status.log
@@ -172,7 +172,9 @@ server 172.31.1.0 255.255.255.0
 route 172.31.1.0 255.255.255.0
 push "route 172.31.1.0 255.255.255.0"
 push "dhcp-option DNS 8.8.8.8"
+push "dhcp-option DNS 1.1.1.1"
 push "dhcp-option DNS 8.8.4.4"
+push  "redirect-gateway def1 bypass-dhcp"
 keepalive 10 120
 persist-key
 persist-tun
@@ -232,4 +234,3 @@ cd /home/openvpn/ready_conf/; ls -alh ./
 echo "сейчас вы в директории с готовыми файлами конфигураций, их уже можно использовать"
 echo "скрипт завершен успешно"
 exec bash
-
