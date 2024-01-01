@@ -107,46 +107,46 @@ EOF
 cd /etc/openvpn/; /etc/openvpn/EasyRSA-3.0.8/easyrsa init-pki
       #Створюємо свій ключ
 /etc/openvpn/EasyRSA-3.0.8/easyrsa build-ca nopass
-      #Создаем сертификат сервера
+      #Створюємо сертіфикат сервера
 /etc/openvpn/EasyRSA-3.0.8/easyrsa build-server-full server_cert nopass
-      #Создаем Диффи Хелмана
+      #Створюємо Діффі Хелмана
 /etc/openvpn/EasyRSA-3.0.8/easyrsa gen-dh
-      #crl для информации об активных/отозванных сертификатах
+      #crl для інформації про активних/відізваних сертификатів
 /etc/openvpn/EasyRSA-3.0.8/easyrsa gen-crl
-      #Теперь копируем все что создали в папку keys
+      #Тепер копіюємо все що створили в папку keys
 cp /etc/openvpn/pki/ca.crt /etc/openvpn/pki/crl.pem /etc/openvpn/pki/dh.pem /etc/openvpn/keys/
 cp /etc/openvpn/pki/issued/server_cert.crt /etc/openvpn/keys/
 cp /etc/openvpn/pki/private/server_cert.key /etc/openvpn/keys/
 
-      #Получим настройки для файла server.conf
-echo "Сейчас соберем информацию для файла конфигурации сервера."
+      #Отримуємо налаштування для файла server.conf
+echo "Зараз зберемо інформацію для файлу конфігурації сервера."
 echo "Порт(по умолчанию 1194):"; read port_num
-if [[ $port_num =~ ^[0-9]+$ ]]; then #проверка на число
-   echo "Установлен порт:" $port_num
+if [[ $port_num =~ ^[0-9]+$ ]]; then #перевірка на число
+   echo "Встановлено порт:" $port_num
 else
-   port_num=1194; echo "Номер порта установлен по умолчанию"
-echo "Протокол(по умолчанию udp)для установки tcp введите 1"; read protocol
+   port_num=1194; echo "Номер порта встановлено за замовчуванням"
+echo "Протокол(за замовчуванням udp)для встановлення tcp введіть 1"; read protocol
 fi
 if [[ $protocol -eq 1 ]]; then
    protocol="tcp"
-   echo "Выбран протокол tcp"
+   echo "Вибрано протокол tcp"
 else
    protocol="udp"
-   echo "Выбран протокол udp"
+   echo "Вибрано протокол udp"
 fi
-      #Теперь создадим директорию и файлы для логов
+      #Тепер створимо папку та файли для логів
 mkdir /var/log/openvpn
 touch /var/log/openvpn/{openvpn-status,openvpn}.log; chown -R openvpn:openvpn /var/log/openvpn
-      #Включаем движение трафика
+      #Вмикаємо перенаправлення трафіка
 echo net.ipv4.ip_forward=1 >>/etc/sysctl.conf
 sysctl -p /etc/sysctl.conf
-      #Настроим selinux
+      #Налаштовуємо selinux
 yum install policycoreutils-python-utils -y
 yum install setroubleshoot -y
 semanage port -a -t openvpn_port_t -p $protocol $port_num
 /sbin/restorecon -v /var/log/openvpn/openvpn.log
 /sbin/restorecon -v /var/log/openvpn/openvpn-status.log
-      #Настроим firewalld
+      #Налаштовуємо firewalld
 firewall-cmd --add-port="$port_num"/"$protocol"
 firewall-cmd --zone=trusted --add-source=172.31.1.0/24
 firewall-cmd --permanent --add-port="$port_num"/"$protocol"
@@ -154,7 +154,7 @@ firewall-cmd --permanent --zone=trusted --add-source=172.31.1.0/24
 firewall-cmd --direct --add-rule ipv4 nat POSTROUTING 0 -s 172.31.1.0/24 -j MASQUERADE
 firewall-cmd --permanent --direct --add-rule ipv4 nat POSTROUTING 0 -s 172.31.1.0/24 -j MASQUERADE
 systemctl restart firewalld
-     #Создадим server.conf
+     #Створюємо server.conf
 mkdir /etc/openvpn/server
 touch /etc/openvpn/server/server.conf
 #chmod -R a+r /etc/openvpn
@@ -187,16 +187,16 @@ mode server
 user nobody
 group nobody
 EOF
-echo "Добавим сервер в автозагрузку и запустим"
+echo "Додамо сервер в автозапуск та запустимо"
 sudo systemctl enable openvpn-server@server
 sudo systemctl start openvpn-server@server
 sudo systemctl status openvpn-server@server
 
-      #Начнем создавать клиентов
-      #Директория для готовых конфигов
+      #Розмочинаємо створення клієнтів
+      #Директорія для готових конфігурацій
 mkdir /home/openvpn/ready_conf
-echo "IP к которому необходимо подключаться клиентам в формате 111.111.111.111"; read ip_adress
-      #Создадим темповый файл конфигурации клиента с настройками
+echo "IP до якого потріюно підключатися клієнти в форматі 111.111.111.111"; read ip_adress
+      #Створимо темповий файл конфігурації клієнта з налаштуваннями
 touch /home/openvpn/temp_conf_client.txt
 cat <<EOF > /home/openvpn/temp_conf_client.txt
 client
@@ -209,7 +209,7 @@ verb 3
 route-method exe
 route-delay 2
 EOF
-      #теперь функция создания клиентов
+      #тепер функція створення клієнтів
 create_client () {
    cd /etc/openvpn/
    /etc/openvpn/EasyRSA-3.0.8/easyrsa build-client-full "$client_name$quantity_client" nopass
@@ -222,15 +222,15 @@ create_client () {
 } >> "/home/openvpn/ready_conf/"$client_name$quantity_client".ovpn"
 
 } 
-      #Запускать функцию создания клиентов, по счетчику
+      #Запускати функцію створення клієнтів, за лічильником
 while [[ $quantity_client -ne 0 ]]; do
    create_client
    let "quantity_client=$quantity_client-1"
 done
-/etc/openvpn/EasyRSA-3.0.8/easyrsa gen-crl #генерируем crl для информации об активных сертификатах
-cp /etc/openvpn/pki/crl.pem /etc/openvpn/keys/ #Копируем в директорию с активными сертификатами
-sudo systemctl restart openvpn-server@server #перезапускаем сервер, для применения crl
+/etc/openvpn/EasyRSA-3.0.8/easyrsa gen-crl #генеруємо crl для інформації про активні сертифікати
+cp /etc/openvpn/pki/crl.pem /etc/openvpn/keys/ #Копіюємо в директорію з активними сертифікатами
+sudo systemctl restart openvpn-server@server #перезапускаємо сервер, для застосування crl
 cd /home/openvpn/ready_conf/; ls -alh ./
-echo "сейчас вы в директории с готовыми файлами конфигураций, их уже можно использовать"
-echo "скрипт завершен успешно"
+echo "Зараз ви в директорії з готовими файлами конфігурацій, їх вже можна використовувати"
+echo "Скрипт завершено успішно"
 exec bash
