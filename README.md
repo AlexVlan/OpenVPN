@@ -8,4 +8,4 @@ To install any scripts you need fork it, then do
 sudo chmod  +x ./Openvpn_installer_CentOS_7-8_v0.1.sh
 ```
 and run it
-``` sudo ./create_openvpn_server_centos8_v0_3.sh ```
+``` sudo ./Openvpn_installer_CentOS_7-8_v0.1.sh ```
